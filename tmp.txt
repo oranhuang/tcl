@@ -1,0 +1,220 @@
+
+			#set outfile [open "/tmp/macupdate.sh" w]
+			#puts $outfile "#!/bin/sh\n"
+			#puts $outfile "cd /tmp"
+			#puts $outfile "cp /dev/mtdblock7 mtdblock7_tmp"		
+			#puts $outfile "MAC_ETH0=$mac\n"
+			#puts $outfile "MAC_ETH0_1=`echo \$mac | cut -f1 -d':'`\n"
+			#puts $outfile "MAC_ETH0_2=`echo \$mac | cut -f2 -d':'`\n"
+			#puts $outfile "MAC_ETH0_3=`echo \$mac | cut -f3 -d':'`\n"
+			#puts $outfile "MAC_ETH0_4=`echo \$mac | cut -f4 -d':'`\n"
+			#puts $outfile "MAC_ETH0_5=`echo \$mac | cut -f5 -d':'`\n"
+			#puts $outfile "MAC_ETH0_6=`echo \$mac | cut -f6 -d':'`\n"
+			#puts $outfile "echo -n -e \"\\x\${MAC_ETH0_1}\\x\${MAC_ETH0_2}\\x\${MAC_ETH0_3}\\x\${MAC_ETH0_4}\\x\${MAC_ETH0_5}\\x\${MAC_ETH0_6}\"\\| dd of=mtdblock7_tmp bs=1 count=6 seek=0 2>/dev/null"
+			#puts $outfile "dd if=mtdblock7_tmp of=/dev/mtdblock7"
+    			#close $outfile
+
+			#spawn sh /tmp/macupdate.sh
+
+    			#if { [catch "spawn sh /tmp/macupdate.sh" reason] } {
+		        #	error_critical "Failed to spawn client: $reason\n"
+			#}   
+    			#set sid $spawn_id
+			
+			#send "ls\r"
+			#set timeout 10
+			#expect timeout {
+			#} "root@ubnt:/#"
+
+
+			sleep 1
+			send "ls\r"
+			set timeout 5
+			expect timeout {
+			} "root@ubnt:"
+			
+			sleep 1			
+			send "cd /tmp\r"
+			set timeout 5
+			expect timeout {
+			} "root@ubnt:"
+			
+			sleep 1			
+			send "cp /dev/mtdblock7 mtdblock7_tmp\r"
+			set timeout 5
+			expect timeout {
+			} "root@ubnt:"
+			
+			sleep 1			
+			send "mac=$mac\r"
+			set timeout 10
+			expect timeout {
+			} "root@ubnt:"			
+    		  		
+			sleep 1			
+			send "MAC_ETH0_1=`echo $mac | cut -c 1-2`\r"
+			set timeout 10
+			expect timeout {
+			} "root@ubnt:"
+			sleep 1			
+			send "MAC_ETH0_2=`echo \$mac | cut -c 3-4`\r"
+			set timeout 10
+			expect timeout {
+			} "root@ubnt:"
+			sleep 1			
+			send "MAC_ETH0_3=`echo \$mac | cut -c 5-6`\r"
+			set timeout 10
+			expect timeout {
+			} "root@ubnt:"
+			sleep 1			
+			send "MAC_ETH0_4=`echo \$mac | cut -c 7-8`\r"
+			set timeout 10
+			expect timeout {
+			} "root@ubnt:"
+			sleep 1			
+			send "MAC_ETH0_5=`echo \$mac | cut -c 9-10`\r"
+			set timeout 10
+			expect timeout {
+			} "root@ubnt:"
+			sleep 1			
+			send "MAC_ETH0_6=`echo \$mac | cut -c 11-12`\r"
+			set timeout 10
+			expect timeout {
+			} "root@ubnt:"
+			
+			sleep 1			
+			send "echo -n -e \"\\x\${MAC_ETH0_1}\\x\${MAC_ETH0_2}\\x\${MAC_ETH0_3}\\x\${MAC_ETH0_4}\\x\${MAC_ETH0_5}\\x\${MAC_ETH0_6}\" | dd of=mtdblock7_tmp bs=1 count=6 seek=0 \r"
+			set timeout 10
+			expect timeout {
+			} "root@ubnt:"
+
+
+
+
+
+
+
+
+     
+    sleep 1 
+    send "set ipaddr 192.168.1.11\r"
+    set timeout 5
+    expect timeout { 
+    	error_critical "U-boot prompt not found !" 
+    } $prompt
+    
+    send "set serverip 192.168.1.19\r"
+    set timeout 5
+    expect timeout { 
+    	error_critical "U-boot prompt not found !" 
+    } $prompt
+   
+    log_progress 10 "Network env setting"
+    sleep 1
+    #et_network_env
+
+
+    #sleep 2
+    send "ping 192.168.1.19\r"
+    set timeout 60
+    expect timeout { 
+    	error_critical "U-boot prompt not found !" 
+    } "host 192.168.1.19 is alive"
+
+
+    log_progress 25 "Firmware Downloading"
+    sleep 1
+
+    #send "\r"
+    send "tftpboot 0x84000000 nor-ipq40xx-single.img\r"
+    set timeout 60
+    expect timeout { 
+    	error_critical "U-boot prompt not found !" 
+    } "Bytes transferred"
+
+    sleep 1
+#      send "\r"
+ #  sleep 3
+#      send "\r"
+    send "imgaddr=0x84000000\r"
+    set timeout 20
+    expect timeout { 
+    	error_critical "U-boot prompt not found !" 
+    } $prompt
+
+    log_progress 30 "Writing Firmware"
+
+    send "source 0x84000000:script\r"
+    set timeout 600
+    expect timeout { 
+    	error_critical "U-boot prompt not found !" 
+    } $prompt
+    
+    log_progress 50 "Firmware update"
+
+    send "reset\r"
+    set timeout 600
+    expect timeout { 
+    	error_critical "U-boot prompt not found !" 
+    } "Starting kernel"
+    send "set ipaddr 192.168.1.11\r"
+    set timeout 5
+    expect timeout { 
+    	error_critical "U-boot prompt not found !" 
+    } $prompt
+    
+    send "set serverip 192.168.1.19\r"
+    set timeout 5
+    expect timeout { 
+    	error_critical "U-boot prompt not found !" 
+    } $prompt
+   
+    log_progress 10 "Network env setting"
+    sleep 1
+    #et_network_env
+
+
+    #sleep 2
+    send "ping 192.168.1.19\r"
+    set timeout 60
+    expect timeout { 
+    	error_critical "U-boot prompt not found !" 
+    } "host 192.168.1.19 is alive"
+
+
+    log_progress 25 "Firmware Downloading"
+    sleep 1
+
+    #send "\r"
+    send "tftpboot 0x84000000 nor-ipq40xx-single.img\r"
+    set timeout 60
+    expect timeout { 
+    	error_critical "U-boot prompt not found !" 
+    } "Bytes transferred"
+
+    sleep 1
+#      send "\r"
+ #  sleep 3
+#      send "\r"
+    send "imgaddr=0x84000000\r"
+    set timeout 20
+    expect timeout { 
+    	error_critical "U-boot prompt not found !" 
+    } $prompt
+
+    log_progress 30 "Writing Firmware"
+
+    send "source 0x84000000:script\r"
+    set timeout 600
+    expect timeout { 
+    	error_critical "U-boot prompt not found !" 
+    } $prompt
+    
+    log_progress 50 "Firmware update"
+
+    send "reset\r"
+    set timeout 600
+    expect timeout { 
+    	error_critical "U-boot prompt not found !" 
+    } "Starting kernel"
+    
